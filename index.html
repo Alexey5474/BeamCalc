@@ -2617,6 +2617,159 @@
         }
       }
 
+
+      /* === TABS_COMPACT_ADD_BUTTON_FLOW_2026_06_22 ===
+         Вкладки больше не растягиваются на всю шапку при одной схеме.
+         Каждая вкладка имеет обычную ширину браузерной вкладки, плюс стоит сразу после последней вкладки
+         и уезжает вправо только по мере добавления новых схем. */
+      .header-tabs {
+        justify-content: flex-start !important;
+        overflow: hidden !important;
+      }
+
+      .tabs-bar {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: calc(100% - 44px) !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        gap: 4px !important;
+      }
+
+      .scheme-tab {
+        --compact-tab-width: clamp(108px, calc((100vw - 220px) / 10), 190px);
+        flex: 0 1 var(--compact-tab-width) !important;
+        width: var(--compact-tab-width) !important;
+        min-width: 0 !important;
+        max-width: 190px !important;
+        padding: 0 5px 0 8px !important;
+        gap: 5px !important;
+      }
+
+      .scheme-tab-label,
+      .scheme-tab-title-input {
+        min-width: 0 !important;
+      }
+
+      .tab-add-btn {
+        flex: 0 0 38px !important;
+        margin-left: 2px !important;
+      }
+
+
+
+      /* === TABS_WIDER_FIXED_2026_06_22 ===
+         Вкладка стала шире примерно на 80% относительно компактного варианта.
+         Плюс остаётся сразу после последней вкладки, а при 10 схемах вкладки сжимаются
+         и продолжают помещаться в одну строку. */
+      .tabs-bar {
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: calc(100% - 44px) !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+      }
+
+      .scheme-tab {
+        --compact-tab-width: 194px !important;
+        flex: 0 1 var(--compact-tab-width) !important;
+        width: var(--compact-tab-width) !important;
+        min-width: 0 !important;
+        max-width: 194px !important;
+      }
+
+      .tab-add-btn {
+        flex: 0 0 38px !important;
+        margin-left: 2px !important;
+      }
+
+
+      /* === TABS_TEN_SLOT_WIDTH_2026_06_22 ===
+         Ширина вкладки считается как 1/10 всей доступной строки вкладок.
+         Одна вкладка не растягивается на всю шапку, но 10 вкладок доходят почти до правого края.
+         Кнопка + не участвует в делении и стоит сразу после последней вкладки. */
+      .header-tabs {
+        width: 100% !important;
+        max-width: 100% !important;
+        justify-content: flex-start !important;
+        align-items: flex-end !important;
+        gap: 6px !important;
+        overflow: hidden !important;
+      }
+
+      .tabs-bar {
+        --tabs-gap: 4px;
+        --tabs-reserved-add: 48px;
+        display: flex !important;
+        flex: 0 0 calc(100% - var(--tabs-reserved-add)) !important;
+        width: calc(100% - var(--tabs-reserved-add)) !important;
+        max-width: calc(100% - var(--tabs-reserved-add)) !important;
+        min-width: 0 !important;
+        gap: var(--tabs-gap) !important;
+        overflow: hidden !important;
+      }
+
+      .scheme-tab {
+        --ten-slot-tab-width: calc((100% - (9 * var(--tabs-gap))) / 10);
+        flex: 0 0 var(--ten-slot-tab-width) !important;
+        width: var(--ten-slot-tab-width) !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 0 7px 0 10px !important;
+        gap: 6px !important;
+      }
+
+      .tab-add-btn {
+        flex: 0 0 38px !important;
+        width: 38px !important;
+        margin-left: 0 !important;
+      }
+
+
+
+      /* === TABS_TEN_SLOT_PLUS_FLOW_2026_06_22 ===
+         Сохраняем удачную ширину: 10 слотов делят почти всю строку вкладок.
+         Но сама строка вкладок больше не занимает всю ширину при 1-9 вкладках,
+         поэтому кнопка + стоит сразу после последней вкладки и уезжает вправо по мере добавления. */
+      .header-tabs {
+        --tabs-gap: 4px;
+        --tabs-add-width: 38px;
+        --tabs-add-gap: 6px;
+        --tabs-right-safe: 10px;
+        --tab-slot-width: 180px;
+        width: 100% !important;
+        max-width: 100% !important;
+        justify-content: flex-start !important;
+        align-items: flex-end !important;
+        gap: var(--tabs-add-gap) !important;
+        overflow: hidden !important;
+      }
+
+      .tabs-bar {
+        display: flex !important;
+        flex: 0 1 auto !important;
+        width: auto !important;
+        max-width: calc(100% - var(--tabs-add-width) - var(--tabs-add-gap)) !important;
+        min-width: 0 !important;
+        gap: var(--tabs-gap) !important;
+        overflow: hidden !important;
+      }
+
+      .scheme-tab {
+        flex: 0 0 var(--tab-slot-width) !important;
+        width: var(--tab-slot-width) !important;
+        min-width: 0 !important;
+        max-width: var(--tab-slot-width) !important;
+        padding: 0 7px 0 10px !important;
+        gap: 6px !important;
+      }
+
+      .tab-add-btn {
+        flex: 0 0 var(--tabs-add-width) !important;
+        width: var(--tabs-add-width) !important;
+        margin-left: 0 !important;
+      }
+
 </style>
   </head>
   <body>
@@ -2638,7 +2791,7 @@
       <div class="layout">
         <section class="panel">
           <div class="panel-head">
-            <span class="panel-head-title" id="calcParamsTitle">Параметры расчёта Схема 1</span>
+            <span class="panel-head-title" id="calcParamsTitle">Параметры расчёта 1</span>
             <button class="reset-btn" id="resetCalculationBtn" type="button" title="Очистить введённые данные" aria-label="Очистить введённые данные">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 12a9 9 0 1 0 3-6.71" />
@@ -2813,7 +2966,7 @@
 
         <section class="scheme-card" id="schemeCard">
           <div class="scheme-head scheme-head-with-actions">
-            <span class="scheme-title-text" id="schemeTitle">Расчетная схема Схема 1</span>
+            <span class="scheme-title-text" id="schemeTitle">Расчетная схема 1</span>
             <button class="scheme-screenshot-btn" id="schemeScreenshotBtn" type="button" title="Скачать скриншот схемы и эпюр" aria-label="Скачать скриншот схемы и эпюр">
               <svg class="scheme-screenshot-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
                 <path class="screenshot-frame" d="M14 8h8M32 8h8M50 8h1a5 5 0 0 1 5 5v3M56 28v8M56 48v3a5 5 0 0 1-5 5h-1M40 56h-8M22 56h-8a5 5 0 0 1-5-5v-3M9 36v-8M9 16v-3a5 5 0 0 1 5-5" />
@@ -2867,7 +3020,7 @@
         </section>
 
         <aside class="summary-card">
-          <div class="summary-head" id="schemeParamsTitle">Параметры схемы Схема 1</div>
+          <div class="summary-head" id="schemeParamsTitle">Параметры схемы 1</div>
           <div class="summary-wrap">
             <div class="summary-box">
               <h3>Перемещение опор</h3>
@@ -3308,6 +3461,7 @@ const TABLE_B = {
       function init() {
         applyAdaptiveScale();
         window.addEventListener("resize", applyAdaptiveScale);
+        window.addEventListener("resize", updateSchemeTabSlotWidth);
         window.addEventListener("resize", updateOpenHelpPopoverPositions);
         window.addEventListener("scroll", updateOpenHelpPopoverPositions, true);
         fillWoodParamSelects();
@@ -3469,8 +3623,31 @@ const TABLE_B = {
         }
       }
 
+      function updateSchemeTabSlotWidth() {
+        const headerTabs = document.querySelector(".header-tabs");
+        if (!headerTabs) return;
+
+        const styles = window.getComputedStyle(headerTabs);
+        const tabsGap = parseFloat(styles.getPropertyValue("--tabs-gap")) || 4;
+        const addGap = parseFloat(styles.getPropertyValue("--tabs-add-gap")) || 6;
+        const rightSafe = parseFloat(styles.getPropertyValue("--tabs-right-safe")) || 10;
+        const addWidth = dom.addTabBtn
+          ? Math.ceil(dom.addTabBtn.getBoundingClientRect().width || parseFloat(styles.getPropertyValue("--tabs-add-width")) || 38)
+          : (parseFloat(styles.getPropertyValue("--tabs-add-width")) || 38);
+
+        const totalWidth = Math.max(0, headerTabs.clientWidth || headerTabs.getBoundingClientRect().width || 0);
+        const slotWidth = Math.max(
+          72,
+          Math.floor((totalWidth - addWidth - addGap - rightSafe - (9 * tabsGap)) / MAX_SCHEME_TABS)
+        );
+
+        headerTabs.style.setProperty("--tab-slot-width", `${slotWidth}px`);
+        if (dom.tabsBar) dom.tabsBar.style.setProperty("--tab-slot-width", `${slotWidth}px`);
+      }
+
       function renderSchemeTabs() {
         if (!dom.tabsBar) return;
+        updateSchemeTabSlotWidth();
         dom.tabsBar.innerHTML = schemeTabs.map((tab) => {
           const isActive = tab.id === activeSchemeTabId;
           const closeDisabled = schemeTabs.length <= 1;
@@ -3493,9 +3670,11 @@ const TABLE_B = {
           dom.addTabBtn.title = isMax ? `Максимум ${MAX_SCHEME_TABS} вкладок` : "Добавить вкладку";
         }
 
+        requestAnimationFrame(updateSchemeTabSlotWidth);
+
         if (editingTabId) {
           requestAnimationFrame(() => {
-            const input = dom.tabsBar.querySelector(`[data-tab-title-input="${editingTabId}"]`);
+            const input = dom.tabsBar.querySelector(`[data-tab-title-input="${CSS.escape(editingTabId)}"]`);
             if (input) {
               input.focus();
               input.select();
