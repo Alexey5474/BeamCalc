@@ -717,8 +717,8 @@
       }
 
       .scheme-ei-box .input {
-        flex: 0 0 110px;
-        width: 110px;
+        flex: 0 0 440px;
+        width: 440px;
         min-height: 40px;
         padding: 8px 12px;
       }
@@ -749,11 +749,13 @@
 
       .formula-list {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        width: 100%;
       }
 
       .formula-item {
+        min-width: 0;
         padding: 12px 14px;
         border-radius: 16px;
         background: #f8fafc;
@@ -767,10 +769,11 @@
 
       .formula-item-value {
         margin-top: 6px;
-        font-size: 22px;
-        line-height: 1.1;
+        font-size: clamp(16px, 1.15vw, 22px);
+        line-height: 1.15;
         font-weight: 700;
         color: #1f2f4d;
+        overflow-wrap: anywhere;
       }
 
       .formula-item-meta {
@@ -819,19 +822,67 @@
 
       .formula-item-actual {
         margin-top: 6px;
-        font-size: 20px;
-        line-height: 1.1;
+        font-size: clamp(16px, 1.05vw, 20px);
+        line-height: 1.15;
         font-weight: 700;
         color: #1f2f4d;
+        overflow-wrap: anywhere;
       }
 
       .formula-item-actual.exceeded {
         color: var(--danger);
       }
 
+      @media (max-width: 1280px) {
+        .formula-list { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+      }
+
       .formula-item.exceeded {
         border-color: rgba(220, 38, 38, 0.35);
         background: #fff7f7;
+      }
+
+
+      .metal-params-box[hidden] { display: none !important; }
+
+      .metal-results {
+        grid-column: 1 / -1;
+      }
+
+      .metal-table-wrap {
+        margin-top: 10px;
+        overflow-x: auto;
+      }
+
+      .metal-check-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        color: #111827;
+      }
+
+      .metal-check-table th,
+      .metal-check-table td {
+        padding: 7px 8px;
+        border: 1px solid #e5e7eb;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .metal-check-table th {
+        background: #f8fafc;
+        color: #374151;
+        font-weight: 700;
+      }
+
+      .metal-status-ok { color: var(--green); font-weight: 700; }
+      .metal-status-bad { color: var(--danger); font-weight: 700; }
+
+      .metal-note {
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #4b5563;
       }
 
       .summary-card {
@@ -1971,8 +2022,8 @@
       }
 
       .scheme-ei-box .input {
-        flex-basis: clamp(92px, 5.4vw, 110px) !important;
-        width: clamp(92px, 5.4vw, 110px) !important;
+        flex-basis: clamp(240px, 22vw, 440px) !important;
+        width: clamp(240px, 22vw, 440px) !important;
       }
 
       .summary-card {
@@ -2957,6 +3008,17 @@
                 </div>
               </div>
             </article>
+            <div class="summary-box metal-params-box" id="metalParamsBox" hidden>
+              <h3 id="metalParamsTitle">Расширенная проверка SRU</h3>
+              <label class="checkbox-row">
+                <input id="metalAdvancedEnabled" type="checkbox" checked />
+                <span>Проверять M/N/Q по методике PDF</span>
+              </label>
+              <div class="field">
+                <label for="metalAxialForce">Продольная сила N, кН</label>
+                <input class="input" id="metalAxialForce" type="text" inputmode="decimal" placeholder="0" />
+              </div>
+            </div>
             <div class="summary-box calc-actions" id="calcActions" hidden>
               <button class="calc-btn" id="runCalculationBtn" type="button">Рассчитать</button>
             </div>
@@ -3058,6 +3120,7 @@
                 <button class="quick-action-btn" type="button" data-quick-action="round">Округлить</button>
               </div>
             </div>
+            
           </div>
         </aside>
       </div>
@@ -3124,6 +3187,49 @@
         RCS: { ei: 7509.6, allowableQ: 299.0, allowableM: 83.4, allowableReaction: 22.0, checkReaction: false },
         WOOD: { ei: 1, allowableQ: 0, allowableM: 0, allowableReaction: 0, checkReaction: false, wood: true },
       };
+
+
+      const METAL_SECTION_PROPERTIES = {
+        RCS: {
+          label: "RCS",
+          zone: "RCS",
+          ei: 7509.6,
+          allowableM: 83.4,
+          allowableN: 1213.0,
+          allowableV: 299.0,
+          interaction: "RCS_B",
+        },
+        SRU_A: {
+          label: "SRU зона A",
+          zone: "A",
+          ei: 1281.0,
+          allowableM: 16.1,
+          allowableN: 397.0,
+          allowableV: 70.0,
+          interaction: "SRU_A",
+        },
+        SRU_B: {
+          label: "SRU зона B",
+          zone: "B",
+          ei: 1474.2,
+          allowableM: 19.3,
+          allowableN: 444.0,
+          allowableV: 114.0,
+          interaction: "RCS_B",
+        },
+      };
+      // Exact SRU zone lengths are stored in SRU_BEAM_OPTIONS: regionA and regionB (meters).
+      const RCS_CONNECTOR_OPTIONS = [
+        { id: "RCS_M20", label: "RCS M20", capacity: 109.7 },
+        { id: "RCS_PIN21", label: "RCS палец Ø21", capacity: 115.2 },
+        { id: "RCS_M24", label: "RCS M24", capacity: 131.7 },
+        { id: "RCS_PIN25", label: "RCS палец Ø25", capacity: 137.2 },
+        { id: "RCS_PIN26", label: "RCS палец Ø26", capacity: 142.6 },
+      ];
+      const SRU_CONNECTOR_OPTIONS = [
+        { id: "SRU_M20", label: "SRU M20", capacity: 70.0 },
+        { id: "SRU_PIN21", label: "SRU палец Ø21", capacity: 70.0 },
+      ];
       const DEFAULT_EI = BEAM_PROPERTIES_BY_SYSTEM.ST20.ei;
       const BEAM_ALLOWABLE_Q = BEAM_PROPERTIES_BY_SYSTEM.ST20.allowableQ;
       const BEAM_ALLOWABLE_M = BEAM_PROPERTIES_BY_SYSTEM.ST20.allowableM;
@@ -3175,22 +3281,22 @@
       ];
 
       const SRU_BEAM_OPTIONS = [
-        { id: "SRU_U120_0_72", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 0,72 м", length: 0.72, mark: "SRU 72 - U120", connectorCount: 0 },
-        { id: "SRU_U120_0_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 0,97 м", length: 0.97, mark: "SRU 97 - U120", connectorCount: 0 },
-        { id: "SRU_U120_1_22", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,22 м", length: 1.22, mark: "SRU 122 - U120", connectorCount: 1 },
-        { id: "SRU_U120_1_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,47 м", length: 1.47, mark: "SRU 147 - U120", connectorCount: 1 },
-        { id: "SRU_U120_1_72", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,72 м", length: 1.72, mark: "SRU 172 - U120", connectorCount: 2 },
-        { id: "SRU_U120_1_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,97 м", length: 1.97, mark: "SRU 197 - U120", connectorCount: 2 },
-        { id: "SRU_U120_2_22", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,22 м", length: 2.22, mark: "SRU 222 - U120", connectorCount: 3 },
-        { id: "SRU_U120_2_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,47 м", length: 2.47, mark: "SRU 247 - U120", connectorCount: 3 },
-        { id: "SRU_U120_2_72", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,72 м", length: 2.72, mark: "SRU 272 - U120", connectorCount: 3 },
-        { id: "SRU_U120_2_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,97 м", length: 2.97, mark: "SRU 297 - U120", connectorCount: 3 },
-        { id: "SRU_U120_3_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 3,47 м", length: 3.47, mark: "SRU 347 - U120", connectorCount: 5 },
-        { id: "SRU_U120_3_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 3,97 м", length: 3.97, mark: "SRU 397 - U120", connectorCount: 5 },
-        { id: "SRU_U120_4_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 4,47 м", length: 4.47, mark: "SRU 447 - U120", connectorCount: 5 },
-        { id: "SRU_U120_4_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 4,97 м", length: 4.97, mark: "SRU 497 - U120", connectorCount: 6 },
-        { id: "SRU_U120_5_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 5,47 м", length: 5.47, mark: "SRU 547 - U120", connectorCount: 7 },
-        { id: "SRU_U120_5_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 5,97 м", length: 5.97, mark: "SRU 597 - U120", connectorCount: 7 },
+        { id: "SRU_U120_0_72", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 0,72 м", length: 0.722, mark: "SRU 72 - U120", connectorCount: 0, regionA: 0.722, regionB: 0.000 },
+        { id: "SRU_U120_0_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 0,97 м", length: 0.972, mark: "SRU 97 - U120", connectorCount: 0, regionA: 0.972, regionB: 0.000 },
+        { id: "SRU_U120_1_22", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,22 м", length: 1.222, mark: "SRU 122 - U120", connectorCount: 1, regionA: 0.517, regionB: 0.188 },
+        { id: "SRU_U120_1_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,47 м", length: 1.472, mark: "SRU 147 - U120", connectorCount: 1, regionA: 0.517, regionB: 0.438 },
+        { id: "SRU_U120_1_72", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,72 м", length: 1.722, mark: "SRU 172 - U120", connectorCount: 2, regionA: 0.517, regionB: 0.688 },
+        { id: "SRU_U120_1_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 1,97 м", length: 1.972, mark: "SRU 197 - U120", connectorCount: 2, regionA: 0.517, regionB: 0.938 },
+        { id: "SRU_U120_2_22", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,22 м", length: 2.222, mark: "SRU 222 - U120", connectorCount: 3, regionA: 0.517, regionB: 1.188 },
+        { id: "SRU_U120_2_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,47 м", length: 2.472, mark: "SRU 247 - U120", connectorCount: 3, regionA: 0.517, regionB: 1.438 },
+        { id: "SRU_U120_2_72", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,72 м", length: 2.722, mark: "SRU 272 - U120", connectorCount: 3, regionA: 0.517, regionB: 1.688 },
+        { id: "SRU_U120_2_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 2,97 м", length: 2.972, mark: "SRU 297 - U120", connectorCount: 3, regionA: 0.517, regionB: 1.938 },
+        { id: "SRU_U120_3_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 3,47 м", length: 3.472, mark: "SRU 347 - U120", connectorCount: 5, regionA: 0.517, regionB: 2.438 },
+        { id: "SRU_U120_3_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 3,97 м", length: 3.972, mark: "SRU 397 - U120", connectorCount: 5, regionA: 0.517, regionB: 2.938 },
+        { id: "SRU_U120_4_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 4,47 м", length: 4.472, mark: "SRU 447 - U120", connectorCount: 5, regionA: 0.517, regionB: 3.438 },
+        { id: "SRU_U120_4_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 4,97 м", length: 4.972, mark: "SRU 497 - U120", connectorCount: 6, regionA: 0.517, regionB: 3.938 },
+        { id: "SRU_U120_5_47", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 5,47 м", length: 5.472, mark: "SRU 547 - U120", connectorCount: 7, regionA: 0.517, regionB: 4.438 },
+        { id: "SRU_U120_5_97", system: "SRU", label: "РИГЕЛЬ SRU U-120 | L = 5,97 м", length: 5.972, mark: "SRU 597 - U120", connectorCount: 7, regionA: 0.517, regionB: 4.938 },
       ];
 
       const RCS_BEAM_OPTIONS = [
@@ -3371,6 +3477,8 @@ const TABLE_B = {
         hasCalculated: false,
         beamEI: DEFAULT_EI,
         ruleOneKn: false,
+        metalAdvancedEnabled: true,
+        metalAxialForce: 0,
         woodLength: WOOD_DEFAULTS.length,
         woodWidthMm: WOOD_DEFAULTS.widthMm,
         woodHeightMm: WOOD_DEFAULTS.heightMm,
@@ -3406,6 +3514,10 @@ const TABLE_B = {
         beamEIInfoPopover: document.getElementById("beamEIInfoPopover"),
         beamEIInfoClose: document.getElementById("beamEIInfoClose"),
         beamEIHelpText: document.getElementById("beamEIHelpText"),
+        metalParamsBox: document.getElementById("metalParamsBox"),
+        metalParamsTitle: document.getElementById("metalParamsTitle"),
+        metalAdvancedEnabled: document.getElementById("metalAdvancedEnabled"),
+        metalAxialForce: document.getElementById("metalAxialForce"),
         schemeScreenshotBtn: document.getElementById("schemeScreenshotBtn"),
         schemeCaptureArea: document.getElementById("schemeCaptureArea"),
         supportHelpBtn: document.getElementById("supportHelpBtn"),
@@ -3502,6 +3614,8 @@ const TABLE_B = {
           hasCalculated: false,
           beamEI: DEFAULT_EI,
           ruleOneKn: false,
+          metalAdvancedEnabled: true,
+          metalAxialForce: 0,
           woodLength: WOOD_DEFAULTS.length,
           woodWidthMm: WOOD_DEFAULTS.widthMm,
           woodHeightMm: WOOD_DEFAULTS.heightMm,
@@ -3847,6 +3961,10 @@ const TABLE_B = {
       }
 
       function getBeamEIHelpText() {
+        const beam = getCurrentBeam();
+        if (beam?.system === "SRU") {
+          return `${getSRUEIDisplayText()}. ${getSRURegionDisplayText(beam)}`;
+        }
         return isSelectedSTBeam()
           ? "Значение взято из документа ГОСТ Р 71938-2025 «Балки двутавровые опалубочные деревянные. Общие технические условия»"
           : "Согласно технической документации PERI GmbH.";
@@ -4216,6 +4334,14 @@ const TABLE_B = {
         bindDecimalInput(dom.standCount, "standCount", { min: 0, max: MAX_INTERMEDIATE_STANDS, digits: 0, integer: true, allowEmpty: true, customCommit: commitStandCount });
         bindDecimalInput(dom.propHeight, "propHeight", { min: 0.95, max: 4.20, digits: 2, allowEmpty: true, customCommit: commitPropHeight });
         bindDecimalInput(dom.beamEI, "beamEI", { min: 1, max: 100000, digits: 1, allowEmpty: false });
+        if (dom.metalAxialForce) bindDecimalInput(dom.metalAxialForce, "metalAxialForce", { min: -100000, max: 100000, digits: 2, allowEmpty: false });
+        if (dom.metalAdvancedEnabled) {
+          dom.metalAdvancedEnabled.addEventListener("change", (event) => {
+            invalidateCalculation();
+            state.metalAdvancedEnabled = !!event.target.checked;
+            renderAll();
+          });
+        }
         bindDecimalInput(dom.woodLength, "woodLength", { min: 0.50, max: 6.00, digits: 3, allowEmpty: false, customCommit: commitWoodLength });
         bindDecimalInput(dom.woodWidth, "woodWidthMm", { min: 20, max: 300, digits: 0, integer: true, allowEmpty: false, customCommit: commitWoodDimension });
         bindDecimalInput(dom.woodHeight, "woodHeightMm", { min: 20, max: 600, digits: 0, integer: true, allowEmpty: false, customCommit: commitWoodDimension });
@@ -4454,6 +4580,7 @@ const TABLE_B = {
 
       function getDefaultValueForKey(key) {
         if (key === "beamEI") return getDefaultBeamEIForCurrentSelection();
+        if (key === "metalAxialForce") return 0;
         return null;
       }
 
@@ -4472,6 +4599,8 @@ const TABLE_B = {
         state.supportMoveStep = 0.05;
         state.loadMoveStep = 0.05;
         state.ruleOneKn = false;
+        state.metalAdvancedEnabled = true;
+        state.metalAxialForce = 0;
         state.woodLength = WOOD_DEFAULTS.length;
         state.woodWidthMm = WOOD_DEFAULTS.widthMm;
         state.woodHeightMm = WOOD_DEFAULTS.heightMm;
@@ -4529,6 +4658,14 @@ const TABLE_B = {
           name: `F${countLoadsOfType("point") + 1}`,
           value: null,
           x: roundTo(length / 2, 3),
+          connectionEnabled: false,
+          connectorType: getDefaultConnectorType(state.systemType),
+          connectionNx: 1,
+          connectionNz: 1,
+          connectionDxMm: 250,
+          connectionDzMm: 125,
+          connectionMoment: 0,
+          connectionHorizontal: 0,
         });
         state.expandedLoadId = id;
         renderAll();
@@ -5101,6 +5238,12 @@ const TABLE_B = {
           return;
         }
 
+        if (prop === "connectorType") {
+          load.connectorType = input.value;
+          renderAll();
+          return;
+        }
+
         const rawValue = parseInputValue(input.value, false);
         const data = buildDerivedState(false);
         const length = Number.isFinite(data.length) && data.length > 0 ? data.length : 1;
@@ -5130,6 +5273,12 @@ const TABLE_B = {
         if (load.type === "point") {
           if (prop === "value") load.value = roundTo(clamp(rawValue, 0, 100000), 2);
           if (prop === "x") load.x = roundTo(clamp(parseLengthInput(input.value), 0, length), 3);
+          if (prop === "connectionNx") load.connectionNx = clamp(Math.round(rawValue), 1, 20);
+          if (prop === "connectionNz") load.connectionNz = clamp(Math.round(rawValue), 1, 20);
+          if (prop === "connectionDxMm") load.connectionDxMm = roundTo(clamp(rawValue, 0, 5000), 1);
+          if (prop === "connectionDzMm") load.connectionDzMm = roundTo(clamp(rawValue, 0, 5000), 1);
+          if (prop === "connectionMoment") load.connectionMoment = roundTo(rawValue, 2);
+          if (prop === "connectionHorizontal") load.connectionHorizontal = roundTo(rawValue, 2);
         }
 
         renderAll();
@@ -6065,6 +6214,103 @@ const TABLE_B = {
         return beam?.system === "ST20";
       }
 
+
+      function isMetalSystem(systemType = state.systemType) {
+        return systemType === "SRU" || systemType === "RCS";
+      }
+
+      function getMetalConnectorOptions(systemType = state.systemType) {
+        if (systemType === "SRU") return SRU_CONNECTOR_OPTIONS;
+        if (systemType === "RCS") return RCS_CONNECTOR_OPTIONS;
+        return [];
+      }
+
+      function getDefaultConnectorType(systemType = state.systemType) {
+        return getMetalConnectorOptions(systemType)[0]?.id || "";
+      }
+
+      function getConnectorOption(type, systemType = state.systemType) {
+        const options = getMetalConnectorOptions(systemType);
+        return options.find((item) => item.id === type) || options[0] || null;
+      }
+
+      function getSRURegionDataByLength(length) {
+        if (!Number.isFinite(length) || length <= 0) return { aLength: 0, bLength: 0, factLength: 0 };
+        const option = SRU_BEAM_OPTIONS.find((item) => nearlyEqual(item.length, length, 1e-6));
+        if (option && Number.isFinite(option.regionA)) {
+          return {
+            aLength: roundTo(Math.max(0, option.regionA), 4),
+            bLength: roundTo(Math.max(0, Number.isFinite(option.regionB) ? option.regionB : option.length - 2 * option.regionA), 4),
+            factLength: option.length,
+          };
+        }
+        const fallbackA = Math.min(0.517, Math.max(0, length / 2 - 0.001));
+        return { aLength: roundTo(fallbackA, 4), bLength: roundTo(Math.max(0, length - 2 * fallbackA), 4), factLength: length };
+      }
+
+      function getSRUZoneALength(length) {
+        return getSRURegionDataByLength(length).aLength;
+      }
+
+      function getSRUZoneAt(length, x) {
+        const region = getSRURegionDataByLength(length);
+        const a = region.aLength;
+        const b = region.bLength;
+        if (!Number.isFinite(x)) return { zone: "A", aLength: a, bLength: b };
+        if (b <= 1e-9) return { zone: "A", aLength: a, bLength: b };
+        return { zone: x <= a + 1e-9 || x >= length - a - 1e-9 ? "A" : "B", aLength: a, bLength: b };
+      }
+
+      function getSRUEIBreakpoints(length) {
+        const region = getSRURegionDataByLength(length);
+        const a = region.aLength;
+        const b = region.bLength;
+        if (!Number.isFinite(length) || length <= 0 || a <= 1e-9 || b <= 1e-9) return [];
+        return uniqueSorted([a, length - a].filter((x) => x > 1e-9 && x < length - 1e-9));
+      }
+
+      function getBeamEIBreakpoints(beam) {
+        if (beam?.system === "SRU") return getSRUEIBreakpoints(beam.length);
+        return [];
+      }
+
+      function getSRUEIDisplayText() {
+        return `зона A = ${formatNum(METAL_SECTION_PROPERTIES.SRU_A.ei, 1)} кН·м²; зона B = ${formatNum(METAL_SECTION_PROPERTIES.SRU_B.ei, 1)} кН·м²`;
+      }
+
+      function getSRURegionDisplayText(beam) {
+        if (beam?.system !== "SRU") return "";
+        const region = getSRURegionDataByLength(beam.length);
+        if (region.bLength <= 1e-9) return `Зона A = ${formatLengthMm(region.aLength)} мм; зона B = 0 мм`;
+        return `Зона A = ${formatLengthMm(region.aLength)} мм от каждого торца; зона B = ${formatLengthMm(region.bLength)} мм`;
+      }
+
+      function getBeamEIDisplayText(data) {
+        if (data?.beam?.system === "SRU") return getSRUEIDisplayText();
+        return `EI = ${formatNum(data?.beamEI ?? 0, 1)} кН·м²`;
+      }
+
+      function getMetalSectionAt(beam, x) {
+        if (beam?.system === "RCS") return METAL_SECTION_PROPERTIES.RCS;
+        if (beam?.system === "SRU") {
+          const info = getSRUZoneAt(beam.length, x);
+          return info.zone === "A" ? METAL_SECTION_PROPERTIES.SRU_A : METAL_SECTION_PROPERTIES.SRU_B;
+        }
+        return null;
+      }
+
+      function getMetalRegionNote(data) {
+        return "";
+      }
+
+
+      function getBeamEIAtFunction(beam, fallbackEI) {
+        if (beam?.system === "SRU") {
+          return (x) => getMetalSectionAt(beam, x)?.ei || fallbackEI;
+        }
+        return () => fallbackEI;
+      }
+
       function getDefaultBeamEIForSystem(systemType) {
         return getBeamPropertiesForSystem(systemType).ei;
       }
@@ -6084,6 +6330,8 @@ const TABLE_B = {
         const beamEI = beam?.system === "WOOD"
           ? clamp(beamProperties.ei, 0.001, 100000)
           : clamp(Number.isFinite(state.beamEI) ? state.beamEI : beamProperties.ei, 1, 100000);
+        const beamEIAt = getBeamEIAtFunction(beam, beamEI);
+        const beamEIBreakpoints = getBeamEIBreakpoints(beam);
 
         const leftOffset = Number.isFinite(state.leftOffset) ? clamp(roundTo(state.leftOffset, 3), 0, Math.max(0, length)) : null;
         const rightOffset = Number.isFinite(state.rightOffset) ? clamp(roundTo(state.rightOffset, 3), 0, Math.max(0, length)) : null;
@@ -6163,6 +6411,8 @@ const TABLE_B = {
               supportSpans,
               stepC: averageSpan,
               beamEI,
+              beamEIAt,
+              beamEIBreakpoints,
             })
           : null;
 
@@ -6173,7 +6423,21 @@ const TABLE_B = {
           ? getSelectedDeflectionResult(analysis, xLeft, supportSpans, deflectionSpanIndex)
           : null;
 
-        const analysisPassesAllowables = analysis
+        const metalAdvancedActive = isMetalSystem(beam?.system) && state.metalAdvancedEnabled !== false;
+        const metalAxialForce = Number.isFinite(state.metalAxialForce) ? state.metalAxialForce : 0;
+        const metalCheck = analysis && metalAdvancedActive
+          ? buildMetalCheck({
+              beam,
+              analysis,
+              supports,
+              loadSegments,
+              normalizedLoads,
+              length,
+              axialForce: metalAxialForce,
+            })
+          : null;
+
+        const baseAnalysisPassesAllowables = analysis
           ? isAnalysisWithinAllowables(
               analysis,
               state.ruleOneKn,
@@ -6182,6 +6446,7 @@ const TABLE_B = {
               selectedDeflection?.absMm ?? analysis.maxDeflectionAbsMm
             )
           : false;
+        const analysisPassesAllowables = baseAnalysisPassesAllowables && (!metalCheck || metalCheck.pass);
         const propsRequiredReaction = propsSelectionEnabled && analysis
           ? getRuleAdjustedValue(analysis.maxReaction, state.ruleOneKn)
           : null;
@@ -6221,7 +6486,12 @@ const TABLE_B = {
           propsRequiredReaction,
           propsCandidates,
           beamEI,
+          beamEIAt,
+          beamEIBreakpoints,
           beamAllowables: beamProperties,
+          metalAdvancedActive,
+          metalAxialForce,
+          metalCheck,
           wood,
           isWoodSystem: beam?.system === "WOOD",
           deflectionSpanIndex,
@@ -6336,10 +6606,28 @@ const TABLE_B = {
           if (load.type === "point") {
             const value = Number.isFinite(load.value) ? roundTo(Math.max(0, load.value), 2) : null;
             const x = clamp(Number.isFinite(load.x) ? load.x : length / 2, 0, length);
+            const connectorOptions = getMetalConnectorOptions(state.systemType);
+            const connectorType = connectorOptions.some((item) => item.id === load.connectorType)
+              ? load.connectorType
+              : (connectorOptions[0]?.id || "");
+            const connectionNx = Number.isFinite(load.connectionNx) ? clamp(Math.round(load.connectionNx), 1, 20) : 1;
+            const connectionNz = Number.isFinite(load.connectionNz) ? clamp(Math.round(load.connectionNz), 1, 20) : 1;
+            const connectionDxMm = Number.isFinite(load.connectionDxMm) ? roundTo(clamp(load.connectionDxMm, 0, 5000), 1) : 250;
+            const connectionDzMm = Number.isFinite(load.connectionDzMm) ? roundTo(clamp(load.connectionDzMm, 0, 5000), 1) : 125;
+            const connectionMoment = Number.isFinite(load.connectionMoment) ? roundTo(load.connectionMoment, 2) : 0;
+            const connectionHorizontal = Number.isFinite(load.connectionHorizontal) ? roundTo(load.connectionHorizontal, 2) : 0;
             return {
               ...load,
               value,
               x: roundTo(x, 3),
+              connectionEnabled: load.connectionEnabled === true,
+              connectorType,
+              connectionNx,
+              connectionNz,
+              connectionDxMm,
+              connectionDzMm,
+              connectionMoment,
+              connectionHorizontal,
               valid: Number.isFinite(value) && value > 0,
             };
           }
@@ -6356,12 +6644,17 @@ const TABLE_B = {
         const redundantX = redundantSupports.map((item) => item.x);
         const realDistributed = input.loadSegments.map((segment) => ({ x1: segment.x1, x2: segment.x2, w: segment.q }));
         const realPointLoads = (input.pointLoads || []).map((load) => ({ x: load.x, P: load.P, label: load.label }));
+        const eiAt = typeof input.beamEIAt === "function" ? input.beamEIAt : (() => input.beamEI);
+        const eiBreakpoints = Array.isArray(input.beamEIBreakpoints)
+          ? input.beamEIBreakpoints.filter((x) => Number.isFinite(x) && x > 1e-9 && x < input.length - 1e-9)
+          : [];
         const integrationGrid = buildIntegrationGrid(input.length, [
           0,
           input.length,
           xA,
           xB,
           ...redundantX,
+          ...eiBreakpoints,
           ...realDistributed.flatMap((item) => [item.x1, item.x2]),
           ...realPointLoads.map((item) => item.x),
         ]);
@@ -6390,8 +6683,8 @@ const TABLE_B = {
         let deltaMatrix = [];
         let deltaVector = [];
         if (redundantX.length) {
-          deltaVector = mRedundants.map((mi) => trapzProduct(Mp, mi, integrationGrid) / input.beamEI);
-          deltaMatrix = mRedundants.map((mi) => mRedundants.map((mj) => trapzTriple(mi, mj, integrationGrid) / input.beamEI));
+          deltaVector = mRedundants.map((mi) => trapzProductOverEI(Mp, mi, integrationGrid, eiAt));
+          deltaMatrix = mRedundants.map((mi) => mRedundants.map((mj) => trapzProductOverEI(mi, mj, integrationGrid, eiAt)));
           X = solveLinearSystem(deltaMatrix, deltaVector).map((value) => sanitizeZero(value));
         }
 
@@ -6421,6 +6714,7 @@ const TABLE_B = {
           xA,
           xB,
           ...redundantX,
+          ...eiBreakpoints,
           ...realDistributed.flatMap((item) => [item.x1, item.x2]),
           ...realPointLoads.map((item) => item.x),
         ]);
@@ -6449,7 +6743,7 @@ const TABLE_B = {
             pointLoads: [{ x, P: 1 }],
           });
           const mx = integrationGrid.map((g) => unitSystem.momentAt(g));
-          return sanitizeZero((trapzProduct(Mp, mx, integrationGrid) - sumArraysWeighted(mRedundants, X, mx, integrationGrid)) / input.beamEI * 1000);
+          return sanitizeZero((trapzProductOverEI(Mp, mx, integrationGrid, eiAt) - sumArraysWeightedOverEI(mRedundants, X, mx, integrationGrid, eiAt)) * 1000);
         });
 
         const maxReaction = Math.max(0, ...supportReactions.map((item) => Math.abs(item.value)));
@@ -6465,6 +6759,8 @@ const TABLE_B = {
           sampleX: shearMoment.sampleX,
           shear: shearMoment.shear,
           moment: shearMoment.moment,
+          shearAt: finalSystem.shearAt,
+          momentAt: finalSystem.momentAt,
           shearForExtrema: shearMoment.shearForExtrema,
           momentForExtrema: shearMoment.momentForExtrema,
           deflectionSampleX,
@@ -6501,6 +6797,284 @@ const TABLE_B = {
         };
       }
 
+
+
+      function buildMetalCheck({ beam, analysis, supports, loadSegments, normalizedLoads, length, axialForce }) {
+        if (!beam || !isMetalSystem(beam.system) || !analysis) return null;
+        const checkPoints = buildMetalCheckPoints({ beam, analysis, supports, loadSegments, normalizedLoads, length });
+        const sectionRows = checkPoints.map((point) => {
+          const section = getMetalSectionAt(beam, point.x);
+          const signedMoment = getAnalysisMomentAt(analysis, point.x);
+          const signedShear = getAnalysisShearAt(analysis, point.x);
+          const moment = Math.abs(signedMoment);
+          // Qz, действ. берём как худшее абсолютное значение в сечении.
+          // Для опор, сосредоточенных сил и краёв частичной равномерной нагрузки учитываются значения до/после точки.
+          const shear = getAnalysisShearEnvelopeAt(analysis, point.x, length);
+          const axial = Math.abs(Number.isFinite(axialForce) ? axialForce : 0);
+          const interaction = evaluateMetalInteraction({ moment, shear, axial, section });
+          return {
+            x: roundTo(point.x, 4),
+            placeLabel: point.label,
+            pointType: point.type,
+            zone: section?.zone || beam.system,
+            sectionLabel: section?.label || beam.system,
+            allowableM: section?.allowableM || 0,
+            allowableN: section?.allowableN || 0,
+            allowableV: section?.allowableV || 0,
+            signedMoment,
+            signedShear,
+            moment,
+            shear,
+            axial,
+            ...interaction,
+          };
+        }).sort((left, right) => left.x - right.x);
+
+        const connectionRows = [];
+
+        const sectionPass = sectionRows.every((row) => row.passed);
+        const maxSectionUtilization = sectionRows.length ? Math.max(...sectionRows.map((row) => row.utilization)) : 0;
+        const maxConnectionUtilization = 0;
+        return {
+          system: beam.system,
+          axialForce: Number.isFinite(axialForce) ? axialForce : 0,
+          regionALength: beam.system === "SRU" ? getSRUZoneALength(length) : null,
+          sectionRows,
+          connectionRows,
+          maxSectionUtilization,
+          maxConnectionUtilization,
+          pass: sectionPass,
+        };
+      }
+
+      function buildMetalCheckPoints({ beam, analysis, supports, loadSegments, normalizedLoads, length }) {
+        const points = [];
+        const addPoint = (x, label, type = "check") => {
+          if (!Number.isFinite(x) || x < -1e-9 || x > length + 1e-9) return;
+          const safeX = roundTo(clamp(x, 0, length), 4);
+          const existing = points.find((item) => nearlyEqual(item.x, safeX, 1e-6));
+          if (existing) {
+            if (label && !existing.label.split("; ").includes(label)) existing.label += `; ${label}`;
+            if (type && existing.type !== type) existing.type = existing.type === "check" ? type : existing.type;
+            return;
+          }
+          points.push({ x: safeX, label: label || `x = ${formatLengthMm(safeX)} мм`, type });
+        };
+
+        addPoint(0, "Левый край балки", "edge");
+        addPoint(length, "Правый край балки", "edge");
+
+        (supports || []).forEach((support, index) => {
+          const label = support.label || `Опора ${index + 1}`;
+          addPoint(support.x, label, "support");
+        });
+
+        addSpanMomentMaxPoints(points, analysis, supports, length, addPoint);
+
+        (normalizedLoads || [])
+          .filter((item) => item.type === "point" && item.valid)
+          .forEach((load) => addPoint(load.x, load.name || "Сосредоточенная сила", "pointLoad"));
+
+        (loadSegments || [])
+          .filter((load) => load.valid !== false && load.wholeLength === false)
+          .forEach((load) => {
+            addPoint(load.x1, `Начало ${load.label || "распр. нагрузки"}`, "udlEdge");
+            addPoint(load.x2, `Конец ${load.label || "распр. нагрузки"}`, "udlEdge");
+          });
+
+        if (beam?.system === "SRU") {
+          const a = getSRUZoneALength(length);
+          if (a > 1e-9 && a < length - 1e-9) addPoint(a, "Граница A/B", "sruBoundary");
+          if (length - a > 1e-9 && length - a < length - 1e-9) addPoint(length - a, "Граница B/A", "sruBoundary");
+        }
+
+        return points.sort((left, right) => left.x - right.x);
+      }
+
+      function addSpanMomentMaxPoints(points, analysis, supports, length, addPoint) {
+        const sortedSupports = (supports || [])
+          .map((item) => item.x)
+          .filter((x) => Number.isFinite(x))
+          .sort((a, b) => a - b);
+        if (sortedSupports.length < 2 || !analysis) return;
+        const xs = analysis.sampleX || [];
+        const shear = analysis.shear || [];
+        if (!xs.length || xs.length !== shear.length) return;
+
+        for (let spanIndex = 0; spanIndex < sortedSupports.length - 1; spanIndex += 1) {
+          const start = sortedSupports[spanIndex];
+          const end = sortedSupports[spanIndex + 1];
+          if (!Number.isFinite(start) || !Number.isFinite(end) || end - start <= 1e-9) continue;
+          const roots = [];
+          for (let i = 0; i < xs.length - 1; i += 1) {
+            const x1 = xs[i];
+            const x2 = xs[i + 1];
+            const q1 = shear[i];
+            const q2 = shear[i + 1];
+            if (!Number.isFinite(x1) || !Number.isFinite(x2) || Math.abs(x2 - x1) <= 1e-12) continue;
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            if (maxX < start + 1e-9 || minX > end - 1e-9) continue;
+            let root = null;
+            if (Math.abs(q1) <= 1e-9) {
+              root = x1;
+            } else if (Math.abs(q2) <= 1e-9) {
+              root = x2;
+            } else if ((q1 > 0 && q2 < 0) || (q1 < 0 && q2 > 0)) {
+              root = x1 + (0 - q1) * (x2 - x1) / (q2 - q1);
+            }
+            if (root !== null && root > start + 1e-6 && root < end - 1e-6) {
+              const safeRoot = roundTo(root, 4);
+              if (!roots.some((item) => nearlyEqual(item, safeRoot, 1e-5))) roots.push(safeRoot);
+            }
+          }
+          roots.forEach((root, rootIndex) => {
+            const suffix = roots.length > 1 ? `.${rootIndex + 1}` : "";
+            addPoint(root, `Пролет C${spanIndex + 1}${suffix}`, "spanMaxMoment");
+          });
+        }
+      }
+
+      function getAnalysisMomentAt(analysis, x) {
+        if (analysis && typeof analysis.momentAt === "function") return sanitizeZero(analysis.momentAt(x));
+        return diagramValueAt(analysis?.sampleX, analysis?.moment, x);
+      }
+
+      function getAnalysisShearAt(analysis, x) {
+        if (analysis && typeof analysis.shearAt === "function") return sanitizeZero(analysis.shearAt(x));
+        return diagramValueAt(analysis?.sampleX, analysis?.shear, x);
+      }
+
+      function getAnalysisShearEnvelopeAt(analysis, x, length) {
+        if (!analysis) return 0;
+        const L = Number.isFinite(length) && length > 0 ? length : 1;
+        const eps = Math.max(1e-6, L * 1e-7);
+        const candidates = [x];
+        if (Number.isFinite(x)) {
+          if (x > eps) candidates.push(x - eps);
+          if (x < L - eps) candidates.push(x + eps);
+        }
+        const values = candidates.map((item) => getAnalysisShearAt(analysis, clamp(item, 0, L)));
+        return Math.abs(values.reduce((best, value) => Math.abs(value) > Math.abs(best) ? value : best, values[0] || 0));
+      }
+
+      function diagramValueAt(xs, ys, x) {
+        if (!Array.isArray(xs) || !Array.isArray(ys) || !xs.length || xs.length !== ys.length) return 0;
+        const exact = [];
+        xs.forEach((item, index) => {
+          if (nearlyEqual(item, x, 1e-7)) exact.push(ys[index]);
+        });
+        if (exact.length) {
+          return exact.reduce((best, value) => Math.abs(value) > Math.abs(best) ? value : best, exact[0]);
+        }
+        for (let i = 0; i < xs.length - 1; i += 1) {
+          const x1 = xs[i];
+          const x2 = xs[i + 1];
+          if (Math.abs(x2 - x1) <= 1e-12) continue;
+          const minX = Math.min(x1, x2);
+          const maxX = Math.max(x1, x2);
+          if (x >= minX - 1e-9 && x <= maxX + 1e-9) {
+            const t = (x - x1) / (x2 - x1);
+            return ys[i] + (ys[i + 1] - ys[i]) * t;
+          }
+        }
+        const nearestIndex = xs.reduce((bestIndex, item, index) => Math.abs(item - x) < Math.abs(xs[bestIndex] - x) ? index : bestIndex, 0);
+        return ys[nearestIndex] || 0;
+      }
+
+      function evaluateMetalInteraction({ moment, shear, axial, section }) {
+        if (!section) return { m: 0, n: 0, v: 0, utilization: 0, passed: true, worstFormula: "—", checks: [] };
+        const m = safeRatio(moment, section.allowableM);
+        const n = safeRatio(axial, section.allowableN);
+        const v = safeRatio(shear, section.allowableV);
+        const checks = [
+          { label: "m = M/Mдоп", value: m, limit: 1.0 },
+          { label: "n = N/Nдоп", value: n, limit: 1.0 },
+          { label: "v = Q/Qдоп", value: v, limit: 0.9 },
+        ];
+
+        if (section.interaction === "SRU_A") {
+          checks.push({ label: "n + m + 0,33v", value: n + m + 0.33 * v, limit: 1.0 });
+        } else {
+          checks.push({ label: "0,89n + 0,80m + 0,33v", value: 0.89 * n + 0.80 * m + 0.33 * v, limit: 1.0 });
+          if (v < 0.33) checks.push({ label: "n + 0,90m", value: n + 0.90 * m, limit: 1.0 });
+          if (n < 0.10) checks.push({ label: "0,88m + 0,37v", value: 0.88 * m + 0.37 * v, limit: 1.0 });
+        }
+
+        const withUtil = checks.map((item) => ({ ...item, utilization: safeRatio(item.value, item.limit) }));
+        const worst = withUtil.reduce((best, item) => item.utilization > best.utilization ? item : best, withUtil[0]);
+        return {
+          m,
+          n,
+          v,
+          checks: withUtil,
+          utilization: worst?.utilization || 0,
+          passed: withUtil.every((item) => item.value <= item.limit + 1e-9),
+          worstFormula: worst?.label || "—",
+        };
+      }
+
+      function safeRatio(value, limit) {
+        const numerator = Number(value);
+        const denominator = Number(limit);
+        if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || Math.abs(denominator) <= 1e-12) return 0;
+        return numerator / denominator;
+      }
+
+      function evaluateConnectionLoad(load, systemType) {
+        const option = getConnectorOption(load.connectorType, systemType);
+        const capacity = option?.capacity || 0;
+        const nx = clamp(Math.round(load.connectionNx || 1), 1, 20);
+        const nz = clamp(Math.round(load.connectionNz || 1), 1, 20);
+        const count = nx * nz;
+        const dx = Math.max(0, Number(load.connectionDxMm || 0)) / 1000;
+        const dz = Math.max(0, Number(load.connectionDzMm || 0)) / 1000;
+        const vertical = Math.abs(Number(load.value || 0));
+        const horizontal = Math.abs(Number(load.connectionHorizontal || 0));
+        const moment = Math.abs(Number(load.connectionMoment || 0));
+        const coords = [];
+        for (let ix = 0; ix < nx; ix += 1) {
+          for (let iz = 0; iz < nz; iz += 1) {
+            coords.push({
+              x: (ix - (nx - 1) / 2) * dx,
+              z: (iz - (nz - 1) / 2) * dz,
+            });
+          }
+        }
+        const ipol = coords.reduce((sum, item) => sum + item.x * item.x + item.z * item.z, 0);
+        const cannotTransferMoment = moment > 1e-9 && ipol <= 1e-12;
+        const forces = coords.map((item) => {
+          let vx = horizontal / count;
+          let vz = vertical / count;
+          if (ipol > 1e-12) {
+            vx += moment * Math.abs(item.z) / ipol;
+            vz += moment * Math.abs(item.x) / ipol;
+          }
+          return Math.sqrt(vx * vx + vz * vz);
+        });
+        const maxBoltLoad = forces.length ? Math.max(...forces) : 0;
+        const utilization = cannotTransferMoment ? Number.POSITIVE_INFINITY : safeRatio(maxBoltLoad, capacity);
+        return {
+          loadId: load.id,
+          label: load.name || "соединение",
+          x: load.x,
+          connectorLabel: option?.label || "—",
+          capacity,
+          nx,
+          nz,
+          count,
+          dxMm: dx * 1000,
+          dzMm: dz * 1000,
+          vertical,
+          horizontal,
+          moment,
+          maxBoltLoad,
+          utilization,
+          passed: !cannotTransferMoment && maxBoltLoad <= capacity + 1e-9,
+          cannotTransferMoment,
+        };
+      }
+
       function buildFormulaItems({ input, supportReactions, redundantSupports, redundantX, X, maxShearAbs, maxHogging, maxSagging, maxDeflectionDownMm }) {
         const items = [];
         if (input.supportSpans?.length) {
@@ -6517,7 +7091,7 @@ const TABLE_B = {
           : "нет";
         items.push(`Приложенные нагрузки: распределённые — <strong>${distributedText}</strong>; точечные — <strong>${pointText}</strong>.`);
         items.push(
-          `Метод сил / правило Верещагина: <strong>δ<sub>ij</sub> = ∫ M<sub>i</sub>M<sub>j</sub> / EI · dx</strong>, <strong>Δ<sub>i</sub> = ∫ M<sub>p</sub>M<sub>i</sub> / EI · dx</strong>, при <strong>EI = ${formatNum(input.beamEI, 1)} кН·м²</strong>. В грузовую эпюру M<sub>p</sub> включены и распределённые, и точечные нагрузки.`
+          `Метод сил / правило Верещагина: <strong>δ<sub>ij</sub> = ∫ M<sub>i</sub>M<sub>j</sub> / EI(x) · dx</strong>, <strong>Δ<sub>i</sub> = ∫ M<sub>p</sub>M<sub>i</sub> / EI(x) · dx</strong>. Для SRU EI(x) берётся по зонам A/B; для остальных балок используется базовое <strong>EI = ${formatNum(input.beamEI, 1)} кН·м²</strong>.`
         );
 
         if (redundantX.length) {
@@ -6770,11 +7344,34 @@ const TABLE_B = {
         return sum;
       }
 
+
+      function trapzProductOverEI(a, b, xs, eiAt) {
+        let sum = 0;
+        for (let i = 0; i < xs.length - 1; i += 1) {
+          const x1 = xs[i];
+          const x2 = xs[i + 1];
+          const dx = x2 - x1;
+          const eiMid = Math.max(1e-9, Number(eiAt((x1 + x2) / 2)) || 0);
+          sum += dx * ((a[i] * b[i]) + (a[i + 1] * b[i + 1])) / 2 / eiMid;
+        }
+        return sum;
+      }
+
       function sumArraysWeighted(momentRedundants, X, mx, xs) {
         if (!momentRedundants.length) return 0;
         let total = 0;
         for (let i = 0; i < momentRedundants.length; i += 1) {
           total += X[i] * trapzProduct(momentRedundants[i], mx, xs);
+        }
+        return total;
+      }
+
+
+      function sumArraysWeightedOverEI(momentRedundants, X, mx, xs, eiAt) {
+        if (!momentRedundants.length) return 0;
+        let total = 0;
+        for (let i = 0; i < momentRedundants.length; i += 1) {
+          total += X[i] * trapzProductOverEI(momentRedundants[i], mx, xs, eiAt);
         }
         return total;
       }
@@ -6995,9 +7592,15 @@ const TABLE_B = {
         dom.rightOffset.value = data.rightOffset === null ? "" : formatLengthInput(data.rightOffset);
         dom.standCount.value = Number.isFinite(data.standCount) ? String(data.standCount) : "";
         dom.propHeight.value = data.propHeight === null ? "" : formatLengthInput(data.propHeight);
-        dom.beamEI.value = formatInput(data.beamEI);
-        dom.beamEI.readOnly = !!data.isWoodSystem;
-        dom.beamEI.title = data.isWoodSystem ? "EI рассчитан автоматически по параметрам бруса" : "";
+        if (data.beam?.system === "SRU") {
+          dom.beamEI.value = getSRUEIDisplayText();
+          dom.beamEI.readOnly = true;
+          dom.beamEI.title = `${getSRURegionDisplayText(data.beam)}; EI SRU рассчитывается по зонам A/B`;
+        } else {
+          dom.beamEI.value = formatInput(data.beamEI);
+          dom.beamEI.readOnly = !!data.isWoodSystem;
+          dom.beamEI.title = data.isWoodSystem ? "EI рассчитан автоматически по параметрам бруса" : "";
+        }
         updateBeamEIInfoText();
         if (dom.woodParamsBlock) dom.woodParamsBlock.hidden = !data.isWoodSystem;
         if (dom.woodLength) dom.woodLength.value = formatLengthInput(state.woodLength || WOOD_DEFAULTS.length);
@@ -7013,6 +7616,11 @@ const TABLE_B = {
             : "Параметры бруса будут рассчитаны автоматически.";
         }
         dom.ruleOneKn.checked = !!state.ruleOneKn;
+        const shouldShowMetalParams = isMetalSystem(data.beam?.system) && Array.isArray(data.normalizedLoads) && data.normalizedLoads.length > 0;
+        if (dom.metalParamsBox) dom.metalParamsBox.hidden = !shouldShowMetalParams;
+        if (dom.metalParamsTitle && isMetalSystem(data.beam?.system)) dom.metalParamsTitle.textContent = `Расширенная проверка ${data.beam.system}`;
+        if (dom.metalAdvancedEnabled) dom.metalAdvancedEnabled.checked = state.metalAdvancedEnabled !== false;
+        if (dom.metalAxialForce) dom.metalAxialForce.value = formatInput(Number.isFinite(state.metalAxialForce) ? state.metalAxialForce : 0);
         renderSupportMoveStepControls();
         renderLoadMoveStepControls();
         dom.propHeight.classList.toggle("error", !!data.propsSelectionEnabled && data.propHeight !== null && !data.propHeightValid);
@@ -7291,10 +7899,12 @@ const TABLE_B = {
         const allowableDeflectionMm = data.allowableDeflectionMm;
         const allowables = data.beamAllowables || BEAM_PROPERTIES_BY_SYSTEM.ST20;
         const reactionForCheck = getRuleAdjustedValue(data.analysis.maxReaction, data.ruleOneKn);
-        const shearForCheck = getRuleAdjustedValue(data.analysis.maxShearAbs, data.ruleOneKn);
         const shouldShowReactionLimit = allowables.checkReaction !== false;
+        const shearSummary = getForceSummaryLimit(data, "shear");
+        const hoggingSummary = getForceSummaryLimit(data, "hogging");
+        const saggingSummary = getForceSummaryLimit(data, "sagging");
         dom.formulaPanel.hidden = false;
-        dom.formulaList.innerHTML = [
+        const resultItems = [
           summaryResultItem({
             label: "Максимальная опорная реакция",
             allowableText: shouldShowReactionLimit ? `${formatNum(allowables.allowableReaction)} кН` : null,
@@ -7304,27 +7914,137 @@ const TABLE_B = {
           }),
           summaryResultItem({
             label: "Максимальная поперечная сила",
-            allowableText: `${formatNum(allowables.allowableQ)} кН`,
-            actualText: `${formatNum(data.analysis.maxShearAbs)} кН`,
-            meta: "|Q|max",
-            exceeded: exceedsDisplayedLimit(shearForCheck, allowables.allowableQ, 2),
+            allowableText: shearSummary.allowableText,
+            actualText: shearSummary.actualText || `${formatNum(shearSummary.actual)} кН`,
+            meta: shearSummary.meta,
+            exceeded: shearSummary.exceeded,
           }),
           summaryResultItem({
             label: "Максимальный момент над опорой",
-            allowableText: `${formatNum(allowables.allowableM)} кН·м`,
-            actualText: `${formatNum(data.analysis.maxHogging)} кН·м`,
-            meta: "M−max",
-            exceeded: exceedsDisplayedLimit(data.analysis.maxHogging, allowables.allowableM, 2),
+            allowableText: hoggingSummary.allowableText,
+            actualText: hoggingSummary.actualText || `${formatNum(hoggingSummary.actual)} кН·м`,
+            meta: hoggingSummary.meta,
+            exceeded: hoggingSummary.exceeded,
           }),
           summaryResultItem({
             label: "Максимальный момент в пролёте",
-            allowableText: `${formatNum(allowables.allowableM)} кН·м`,
-            actualText: `${formatNum(data.analysis.maxSagging)} кН·м`,
-            meta: "M+max",
-            exceeded: exceedsDisplayedLimit(data.analysis.maxSagging, allowables.allowableM, 2),
+            allowableText: saggingSummary.allowableText,
+            actualText: saggingSummary.actualText || `${formatNum(saggingSummary.actual)} кН·м`,
+            meta: saggingSummary.meta,
+            exceeded: saggingSummary.exceeded,
           }),
           summaryDeflectionItem(data, allowableDeflectionMm),
-        ].join("");
+        ];
+        if (data.metalCheck) resultItems.push(renderMetalCheckResult(data.metalCheck));
+        dom.formulaList.innerHTML = resultItems.join("");
+      }
+
+
+
+
+      function getSRUAllowableSummaryText(type) {
+        const isShear = type === "shear";
+        const a = isShear ? METAL_SECTION_PROPERTIES.SRU_A.allowableV : METAL_SECTION_PROPERTIES.SRU_A.allowableM;
+        const b = isShear ? METAL_SECTION_PROPERTIES.SRU_B.allowableV : METAL_SECTION_PROPERTIES.SRU_B.allowableM;
+        const unit = isShear ? "кН" : "кН·м";
+        return `зона A = ${formatNum(a)} ${unit}; зона B = ${formatNum(b)} ${unit}`;
+      }
+
+      function getForceSummaryLimit(data, type) {
+        const allowables = data.beamAllowables || BEAM_PROPERTIES_BY_SYSTEM.ST20;
+        const system = data?.beam?.system;
+        const rows = data?.metalCheck?.sectionRows || [];
+        let row = null;
+        if (system === "SRU" && rows.length) {
+          if (type === "shear") {
+            row = rows.reduce((best, item) => Math.abs(item.signedShear || 0) > Math.abs(best.signedShear || 0) ? item : best, rows[0]);
+          } else if (type === "hogging") {
+            const candidates = rows.filter((item) => (item.signedMoment || 0) < -1e-9);
+            row = candidates.length ? candidates.reduce((best, item) => Math.abs(item.signedMoment || 0) > Math.abs(best.signedMoment || 0) ? item : best, candidates[0]) : null;
+          } else if (type === "sagging") {
+            const candidates = rows.filter((item) => (item.signedMoment || 0) > 1e-9);
+            row = candidates.length ? candidates.reduce((best, item) => Math.abs(item.signedMoment || 0) > Math.abs(best.signedMoment || 0) ? item : best, candidates[0]) : null;
+          }
+        }
+
+        if (row) {
+          const isShear = type === "shear";
+          const allowable = isShear ? row.allowableV : row.allowableM;
+          const actual = isShear ? Math.abs(row.signedShear || row.shear || 0) : Math.abs(row.signedMoment || row.moment || 0);
+          const unit = isShear ? "кН" : "кН·м";
+          const metaBase = type === "shear" ? "|Q|max" : (type === "hogging" ? "M−max" : "M+max");
+          const zoneText = row.zone ? `зона ${row.zone}` : "";
+          const placeText = row.placeLabel ? `, ${row.placeLabel}` : "";
+          const allowableText = system === "SRU"
+            ? getSRUAllowableSummaryText(type)
+            : `${formatNum(allowable)} ${unit}`;
+          return {
+            allowableText,
+            actual,
+            actualText: `${formatNum(actual)} ${unit}${zoneText ? ` (${zoneText}, x = ${formatLengthMm(row.x)} мм)` : ""}`,
+            meta: `${metaBase}${placeText}`,
+            exceeded: exceedsDisplayedLimit(actual, allowable, 2),
+          };
+        }
+
+        if (type === "shear") {
+          const actual = data.analysis.maxShearAbs;
+          const actualForCheck = getRuleAdjustedValue(actual, data.ruleOneKn);
+          return {
+            allowableText: `${formatNum(allowables.allowableQ)} кН`,
+            actual,
+            meta: "|Q|max",
+            exceeded: exceedsDisplayedLimit(actualForCheck, allowables.allowableQ, 2),
+          };
+        }
+        if (type === "hogging") {
+          return {
+            allowableText: `${formatNum(allowables.allowableM)} кН·м`,
+            actual: data.analysis.maxHogging,
+            meta: "M−max",
+            exceeded: exceedsDisplayedLimit(data.analysis.maxHogging, allowables.allowableM, 2),
+          };
+        }
+        return {
+          allowableText: `${formatNum(allowables.allowableM)} кН·м`,
+          actual: data.analysis.maxSagging,
+          meta: "M+max",
+          exceeded: exceedsDisplayedLimit(data.analysis.maxSagging, allowables.allowableM, 2),
+        };
+      }
+
+      function renderMetalCheckResult(metalCheck) {
+        const statusClass = metalCheck.pass ? "metal-status-ok" : "metal-status-bad";
+        const statusText = metalCheck.pass ? "проходит" : "не проходит";
+        const sectionRows = (metalCheck.sectionRows || []).slice(0, 20).map((row) => {
+          const utilizationClass = row.utilization <= 1 + 1e-9 ? "metal-status-ok" : "metal-status-bad";
+          return `
+            <tr>
+              <td>${escapeHtml(row.placeLabel || "—")}</td>
+              <td>${formatLengthMm(row.x)}</td>
+              <td>${escapeHtml(row.sectionLabel)}</td>
+              <td>${formatNum(row.moment)} </td>
+              <td>${formatNum(row.axial)} </td>
+              <td>${formatNum(row.shear)} </td>
+              <td>${formatNum(row.m)}</td>
+              <td>${formatNum(row.n)}</td>
+              <td>${formatNum(row.v)}</td>
+              <td class="${utilizationClass}">${formatNum(row.utilization * 100, 1)}%</td>
+            </tr>
+          `;
+        }).join("");
+        return `
+          <div class="formula-item metal-results${metalCheck.pass ? "" : " exceeded"}">
+            <div class="formula-item-label">Расширенная проверка ${escapeHtml(metalCheck.system)} по M/N/Q</div>
+            <div class="formula-item-value"><span class="${statusClass}">${statusText}</span></div>
+            <div class="metal-table-wrap">
+              <table class="metal-check-table">
+                <thead><tr><th>Сечение / место</th><th>x, мм</th><th>Зона</th><th>My, действ., кН·м</th><th>N, действ., кН</th><th>Qz, действ., кН</th><th>m</th><th>n</th><th>v</th><th>Процент загруженности</th></tr></thead>
+                <tbody>${sectionRows}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
       }
 
       function summaryDeflectionItem(data, allowableDeflectionMm) {
@@ -7358,7 +8078,7 @@ const TABLE_B = {
       function summaryResultItem({ label, allowableText, actualText, meta, exceeded }) {
         const hasAllowableText = allowableText !== null && allowableText !== undefined && allowableText !== "";
         const allowableHtml = hasAllowableText
-          ? `<div class="formula-item-limit">Допустимое значение</div><div class="formula-item-value">${escapeHtml(allowableText)}</div>`
+          ? `<div class="formula-item-limit">Допустимые значения</div><div class="formula-item-value">${escapeHtml(allowableText)}</div>`
           : "";
         return `
           <div class="formula-item${exceeded ? " exceeded" : ""}">
@@ -7462,7 +8182,7 @@ const TABLE_B = {
 
       function getSchemeTitleText(data) {
         const beamName = data.beam?.mark || `Балка ${formatLengthMm(data.length)} мм`;
-        const parts = [`${beamName} | L = ${formatLengthMm(data.length)} мм`, `EI = ${formatNum(data.beamEI, 1)} кН·м²`];
+        const parts = [`${beamName} | L = ${formatLengthMm(data.length)} мм`, getBeamEIDisplayText(data)];
         if (Number.isFinite(data.propHeight) && data.propsSelectionEnabled) parts.push(`H = ${formatLengthMm(data.propHeight)} мм`);
         if (data.isWoodSystem && data.wood) parts.push(`${data.wood.strengthClass.label}`);
         return parts.join(" | ");
